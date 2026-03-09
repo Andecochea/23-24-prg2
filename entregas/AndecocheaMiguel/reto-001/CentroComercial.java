@@ -1,135 +1,75 @@
-import java.util.Random;
-
 public class CentroComercial {
     public static void main(String[] args) {
-        int[] caja={0,0,0,0,0};
-        int[] objetos={0,0,0,0,0};
-        boolean[] libre={ true, true, true, true, true };
-        int cola= 0;
-        final int minutosEnUnDia = 12 * 60;
-        int numeroDeClientes = 0;
-        boolean llegaNuevo = false;
+        final int TOTAL_CAJAS = 5;
+        final int MINUTOS_JORNADA = 12 * 60;
+        final int LIMITE_COLA_REFUERZO = 15;
+
+        int[] clientesAtendidosPorCaja = new int[TOTAL_CAJAS];
+        int[] itemsEnProcesoPorCaja = new int[TOTAL_CAJAS];
+        boolean[] isCajaDisponible = {true, true, true, true, true};
+
+        int personasEnCola = 0;
+        int totalItemsVendidos = 0;
         int minutosSinCola = 0;
-        int totalItems = 0;
-        int caja5 = 0, nItems5 = 0;
-        boolean libre5 = true, activa = false;
+        boolean isCajaRefuerzoActiva = false;
 
-        for (int tiempo=1; tiempo< minutosEnUnDia; tiempo++) {
+        for (int minutoActual = 1; minutoActual < MINUTOS_JORNADA; minutoActual++) {
+            
             if (Math.random() * 100 < 40) {
-                
-                llegaNuevo = true;
-                cola++;
-                if (libre[0]) {
-                    caja[0]++;
-                    libre[0] = false; 
-                    nItems[0] = ((int) (Math.random() * 100)) % 11 + 5;
-                    totalItems = totalItems + nItems[0];
-                    cola--;
-
-                } else if (libre[1]) {
-                    caja[1]++;
-                    libre[1] = false; 
-                    nItems[1] = ((int) (Math.random() * 100)) % 11 + 5;
-                    totalItems = totalItems + nItems[1];
-                    cola--;
-
-                } else if (libre[2]) {
-                    caja[2]++;
-                    libre[2] = false; 
-                    nItems[2] = ((int) (Math.random() * 100)) % 11 + 5;
-                    totalItems = totalItems + nItems[2];
-                    cola--;
-
-                } else if (libre[3]) {
-                    caja[3]++;
-                    libre[3] = false; 
-                    nItems[3] = ((int) (Math.random() * 100)) % 11 + 5;
-                    totalItems = totalItems + nItems[3];
-                    cola--;
-                } else if (libre[4] && activa) {
-                    caja[4]++;
-                    libre[4] = false; 
-                    nItems[4] = ((int) (Math.random() * 100)) % 11 + 5;
-                    totalItems = totalItems + nItems[4];
-                    cola--;
-                }
-            
+                personasEnCola++;
             }
-            
-            if (nItems[0] > 0) {
-                nItems[0]--;
-                if (nItems[0] == 0) {
-                    libre[0] = true;
+
+            for (int i = 0; i < TOTAL_CAJAS; i++) {
+                boolean puedeAtender = (i < 4) || (i == 4 && isCajaRefuerzoActiva);
+
+                if (personasEnCola > 0 && isCajaDisponible[i] && puedeAtender) {
+                    clientesAtendidosPorCaja[i]++;
+                    isCajaDisponible[i] = false;
+                    itemsEnProcesoPorCaja[i] = (int) (Math.random() * 11) + 5;
+                    totalItemsVendidos += itemsEnProcesoPorCaja[i];
+                    personasEnCola--;
                 }
-            }
-            if (nItems[1] > 0) {
-                nItems[1]--;
-                if (nItems[1] == 0) {
-                    libre[1] = true;
+
+                if (itemsEnProcesoPorCaja[i] > 0) {
+                    itemsEnProcesoPorCaja[i]--;
+                    if (itemsEnProcesoPorCaja[i] == 0) {
+                        isCajaDisponible[i] = true;
+                    }
                 }
             }
 
-            if (nItems[2] > 0) {
-                nItems[2]--;
-                if (nItems[2] == 0) {
-                    libre[2] = true;
-                }
-            }
-
-            if (nItems[3] > 0) {
-                nItems[3]--;
-                if (nItems[3] == 0) {
-                    libre[3] = true;
-                }
-            }
-
-            if (nItems[4] > 0) {
-                nItems[4]--;
-                if (nItems[4] == 0) {
-                    libre[4] = true;
-                }
-            }
-            if (cola == 0) {
+            if (personasEnCola == 0) {
                 minutosSinCola++;
             }
             
+            isCajaRefuerzoActiva = (personasEnCola >= LIMITE_COLA_REFUERZO);
 
-            System.out.print("MINUTO " + tiempo);
-            if (llegaNuevo) {
-                System.out.println(" - LLega 1 persona - En cola: " + cola);
-                llegaNuevo = false;
-            } else {
-                System.out.println(" - LLega 0 persona - En cola: " + cola);
-            }
-            System.out.print(" Caja 1:[" + nItems[0] + "] | Caja 2:[" + nItems[1] + "] | Caja 3:[" + nItems[2] + "] | Caja 4:[" + nItems[3] + "]");
-            if (nItems5 > 0 || activa) {
-                System.out.println(" Caja 5:[" + nItems[4] + "] ");
-            } else {
-                System.out.println();
-            }
-
-            if (cola >= 15) {
-                activa = true;
-            } else {
-                activa = false;
-            }
-        
-        }
-        for(int i=0 ; i < caja.length; i++){
-            System.out.println("Clientes totales que pasan por la caja 1"+(i+1) +": " + caja[i]);
+            imprimirEstadoMinuto(minutoActual, personasEnCola, itemsEnProcesoPorCaja, isCajaRefuerzoActiva);
         }
 
-        int total=0;
-        for(int i=0 ; i < caja.length; i++){
-            total += caja[i];
+        imprimirResumenFinal(clientesAtendidosPorCaja, totalItemsVendidos, minutosSinCola, personasEnCola);
+    }
+
+    private static void imprimirEstadoMinuto(int min, int cola, int[] items, boolean activa) {
+        System.out.print("MINUTO " + min + " - Cola: " + cola + " | ");
+        for (int i = 0; i < items.length; i++) {
+            System.out.print("C" + (i + 1) + ":[" + items[i] + "] ");
         }
-        System.out.println("Personas que han pasado por la tienda: " + total);
-        System.out.println("Hoy se han vendido " + totalItems + " de productos");
-        System.out.println("La cola ha estado vacia durante " + minutosSinCola + " minutos");
-        System.out.println("Clientes que han quedado sin atender: " + cola);
+        if (activa) System.out.print(" (REFUERZO)");
+        System.out.println();
+    }
 
-
+    private static void imprimirResumenFinal(int[] atendidos, int totalI, int minVacio, int colaFinal) {
+        int totalPersonas = 0;
+        System.out.println("\n--- ESTADISTICAS FINALES ---");
+        for (int i = 0; i < atendidos.length; i++) {
+            System.out.println("Caja " + (i + 1) + ": " + atendidos[i] + " clientes");
+            totalPersonas += atendidos[i];
+        }
+        System.out.println("----------------------------");
+        System.out.println("Total Atendidos: " + totalPersonas);
+        System.out.println("Total Productos: " + totalI);
+        System.out.println("Minutos sin cola: " + minVacio);
+        System.out.println("Clientes restantes: " + colaFinal);
     }
 }
-
- 
